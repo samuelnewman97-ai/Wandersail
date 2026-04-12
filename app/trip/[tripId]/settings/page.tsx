@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { PosterHeader } from "@/components/layout/PosterHeader";
 import { downloadJson, downloadIcs } from "@/lib/export";
-import { Download, Trash2, Save, Map as MapIcon } from "lucide-react";
+import { Download, Trash2, Save, Map as MapIcon, MessageSquare } from "lucide-react";
 
 const EMOJI_CHOICES = ["✈️", "🗼", "🏝️", "🏔️", "🗽", "🏛️", "🌋", "🏰", "🌊", "🍜", "🗻", "⛩️"];
 
@@ -17,6 +17,10 @@ export default function SettingsPage({ params }: { params: Promise<{ tripId: str
   const deleteTrip = useStore((s) => s.deleteTrip);
   const mapboxToken = useStore((s) => s.mapboxToken);
   const setMapboxToken = useStore((s) => s.setMapboxToken);
+  const anthropicApiKey = useStore((s) => s.anthropicApiKey);
+  const setAnthropicApiKey = useStore((s) => s.setAnthropicApiKey);
+  const chatModel = useStore((s) => s.chatModel);
+  const setChatModel = useStore((s) => s.setChatModel);
 
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -24,6 +28,7 @@ export default function SettingsPage({ params }: { params: Promise<{ tripId: str
   const [currency, setCurrency] = useState("USD");
   const [emoji, setEmoji] = useState("✈️");
   const [tokenInput, setTokenInput] = useState("");
+  const [claudeKeyInput, setClaudeKeyInput] = useState("");
 
   useEffect(() => {
     if (trip) {
@@ -142,6 +147,77 @@ export default function SettingsPage({ params }: { params: Promise<{ tripId: str
             Stored in this browser only.{" "}
             <a href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noopener noreferrer" className="underline hover:text-orange">
               Get a free token →
+            </a>
+          </p>
+        </section>
+
+        <hr className="divider-dashed" />
+
+        <section>
+          <h2 className="display text-2xl mb-4 text-teal-dark flex items-center gap-2">
+            <MessageSquare size={22} /> Claude (trip co-planner)
+          </h2>
+          {anthropicApiKey ? (
+            <div className="flex items-center gap-3">
+              <div className="flex-1 font-mono text-xs bg-cream-dark border-2 border-ink p-2 truncate">
+                {anthropicApiKey.slice(0, 12)}…{anthropicApiKey.slice(-6)}
+              </div>
+              <button
+                onClick={() => {
+                  if (confirm("Remove the saved Claude API key?")) setAnthropicApiKey(null);
+                }}
+                className="btn-poster btn-poster-secondary"
+              >
+                <Trash2 size={14} /> Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={claudeKeyInput}
+                onChange={(e) => setClaudeKeyInput(e.target.value)}
+                placeholder="sk-ant-api03-..."
+                className="field-input flex-1 font-mono text-xs"
+                spellCheck={false}
+                type="password"
+              />
+              <button
+                onClick={() => {
+                  if (claudeKeyInput.trim()) {
+                    setAnthropicApiKey(claudeKeyInput.trim());
+                    setClaudeKeyInput("");
+                  }
+                }}
+                disabled={!claudeKeyInput.trim()}
+                className="btn-poster disabled:opacity-40"
+              >
+                <Save size={14} /> Save
+              </button>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <label className="field-label">Model</label>
+            <select
+              value={chatModel}
+              onChange={(e) => setChatModel(e.target.value)}
+              className="field-input max-w-sm"
+            >
+              <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (recommended)</option>
+              <option value="claude-opus-4-6">Claude Opus 4.6 (most capable)</option>
+              <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest)</option>
+            </select>
+          </div>
+
+          <p className="text-xs text-ink/60 mt-2">
+            Stored in this browser only. Used by the "Ask Claude" chat sidebar to help plan your trip.{" "}
+            <a
+              href="https://console.anthropic.com/settings/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-orange"
+            >
+              Get an API key →
             </a>
           </p>
         </section>

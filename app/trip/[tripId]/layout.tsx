@@ -1,10 +1,12 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LeftRail } from "@/components/layout/LeftRail";
 import { HydrationGate } from "@/components/layout/HydrationGate";
+import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { useStore } from "@/lib/store";
+import { MessageCircle } from "lucide-react";
 
 export default function TripLayout({
   children,
@@ -17,7 +19,9 @@ export default function TripLayout({
   const router = useRouter();
   const hydrated = useStore((s) => s.hydrated);
   const tripExists = useStore((s) => Boolean(s.trips[tripId]));
+  const trip = useStore((s) => s.trips[tripId]);
   const setActive = useStore((s) => s.setActiveTrip);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     if (hydrated && tripExists) setActive(tripId);
@@ -27,13 +31,37 @@ export default function TripLayout({
     if (hydrated && !tripExists) router.replace("/");
   }, [hydrated, tripExists, router]);
 
+  // Cmd/Ctrl+K to open chat
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setChatOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
     <HydrationGate>
-      {tripExists && (
-        <div className="flex min-h-screen">
-          <LeftRail tripId={tripId} />
-          <main className="flex-1 p-8 md:p-12 max-w-6xl">{children}</main>
-        </div>
+      {tripExists && trip && (
+        <>
+          <div className="flex min-h-screen">
+            <LeftRail tripId={tripId} />
+            <main className="flex-1 p-8 md:p-12 max-w-6xl">{children}</main>
+          </div>
+          <button
+            onClick={() => setChatOpen(true)}
+            className="fixed bottom-6 right-6 z-40 btn-poster shadow-lg"
+            style={{ boxShadow: "5px 5px 0 var(--orange)" }}
+            aria-label="Ask Claude (Ctrl+K)"
+            title="Ask Claude · Ctrl+K"
+          >
+            <MessageCircle size={16} /> Ask Claude
+          </button>
+          <ChatSidebar trip={trip} open={chatOpen} onClose={() => setChatOpen(false)} />
+        </>
       )}
     </HydrationGate>
   );

@@ -6,8 +6,11 @@ import { CATEGORIES } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
 import { useStore, newLink } from "@/lib/store";
 import { TimeSelect } from "@/components/ui/TimeSelect";
+import { LinkedTasksEditor } from "@/components/activity-links/LinkedTasksEditor";
+import { LinkedDocsEditor } from "@/components/activity-links/LinkedDocsEditor";
+import { LinkedPackingEditor } from "@/components/activity-links/LinkedPackingEditor";
 import { parseCoordinates, formatLat, formatLng } from "@/lib/coords";
-import { X, Link2, Plus, Trash2, MapPin } from "lucide-react";
+import { X, Link2, Plus, Trash2, MapPin, CheckSquare, FileText, Luggage } from "lucide-react";
 
 interface Props {
   tripId: string;
@@ -230,16 +233,37 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
             </div>
           </div>
 
-          <div>
-            <label className="field-label">Planning requirements</label>
-            <textarea
-              value={draft.planningNotes}
-              onChange={(e) => update("planningNotes", e.target.value)}
-              rows={2}
-              placeholder="Book 2 weeks ahead, photo ID required…"
-              className="field-input resize-none"
-            />
-          </div>
+          {/* Linked sub-items: tasks, documents, packing. These save directly to
+              the store, so they're only available after the activity exists. */}
+          {isNew ? (
+            <div className="stamp text-[10px] text-ink/50 border-2 border-dashed border-ink/30 p-3 text-center">
+              Save this activity to add linked planning tasks, documents, and packing items.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="field-label flex items-center gap-1">
+                  <CheckSquare size={11} /> Planning tasks for this activity
+                </label>
+                <LinkedTasksEditor tripId={tripId} activityId={draft.id} />
+              </div>
+              <div>
+                <label className="field-label flex items-center gap-1">
+                  <FileText size={11} /> Related documents
+                </label>
+                <LinkedDocsEditor tripId={tripId} activityId={draft.id} />
+              </div>
+              <div>
+                <label className="field-label flex items-center gap-1">
+                  <Luggage size={11} /> Packing for this activity
+                </label>
+                <LinkedPackingEditor tripId={tripId} activityId={draft.id} />
+              </div>
+              <div className="stamp text-[9px] text-ink/40">
+                Linked items save automatically as you edit them.
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="flex items-center justify-between mb-2">

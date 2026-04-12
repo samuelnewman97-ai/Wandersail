@@ -11,6 +11,9 @@ import type {
   PackingItem,
   DocumentRef,
   Link,
+  ChatThread,
+  ChatMessage,
+  ChatToolCall,
 } from "./types";
 import { uid } from "./utils";
 import { todayIso, shiftDay } from "./date";
@@ -19,10 +22,29 @@ interface Store {
   trips: Record<TripId, Trip>;
   activeTripId: TripId | null;
   mapboxToken: string | null;
+  anthropicApiKey: string | null;
+  chatModel: string;
+  chats: Record<TripId, ChatThread>;
   hydrated: boolean;
 
   setHydrated: () => void;
   setMapboxToken: (token: string | null) => void;
+  setAnthropicApiKey: (key: string | null) => void;
+  setChatModel: (model: string) => void;
+
+  appendChatMessage: (tripId: TripId, message: ChatMessage) => void;
+  updateChatMessage: (
+    tripId: TripId,
+    messageId: string,
+    patch: Partial<ChatMessage>
+  ) => void;
+  updateChatToolCall: (
+    tripId: TripId,
+    messageId: string,
+    toolCallId: string,
+    patch: Partial<ChatToolCall>
+  ) => void;
+  clearChat: (tripId: TripId) => void;
   createTrip: (name: string, startDate: string, endDate: string, emoji?: string) => TripId;
   deleteTrip: (id: TripId) => void;
   setActiveTrip: (id: TripId) => void;
@@ -159,10 +181,76 @@ export const useStore = create<Store>()(
       trips: {},
       activeTripId: null,
       mapboxToken: null,
+      anthropicApiKey: null,
+      chatModel: "claude-sonnet-4-6",
+      chats: {},
       hydrated: false,
 
       setHydrated: () => set({ hydrated: true }),
       setMapboxToken: (token) => set({ mapboxToken: token && token.trim() ? token.trim() : null }),
+      setAnthropicApiKey: (key) =>
+        set({ anthropicApiKey: key && key.trim() ? key.trim() : null }),
+      setChatModel: (model) => set({ chatModel: model }),
+
+      appendChatMessage: (tripId, message) =>
+        set((s) => {
+          const thread: ChatThread = s.chats[tripId] ?? { messages: [], updatedAt: message.createdAt };
+          return {
+            chats: {
+              ...s.chats,
+              [tripId]: {
+                messages: [...thread.messages, message],
+                updatedAt: message.createdAt,
+              },
+            },
+          };
+        }),
+
+      updateChatMessage: (tripId, messageId, patch) =>
+        set((s) => {
+          const thread = s.chats[tripId];
+          if (!thread) return s;
+          return {
+            chats: {
+              ...s.chats,
+              [tripId]: {
+                ...thread,
+                messages: thread.messages.map((m) => (m.id === messageId ? { ...m, ...patch } : m)),
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+
+      updateChatToolCall: (tripId, messageId, toolCallId, patch) =>
+        set((s) => {
+          const thread = s.chats[tripId];
+          if (!thread) return s;
+          return {
+            chats: {
+              ...s.chats,
+              [tripId]: {
+                ...thread,
+                messages: thread.messages.map((m) => {
+                  if (m.id !== messageId) return m;
+                  return {
+                    ...m,
+                    toolCalls: (m.toolCalls ?? []).map((tc) =>
+                      tc.id === toolCallId ? { ...tc, ...patch } : tc
+                    ),
+                  };
+                }),
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+
+      clearChat: (tripId) =>
+        set((s) => {
+          const { [tripId]: _dropped, ...rest } = s.chats;
+          return { chats: rest };
+        }),
 
       createTrip: (name, startDate, endDate, emoji) => {
         const trip = blankTrip(name, startDate, endDate, emoji);
@@ -207,6 +295,8 @@ export const useStore = create<Store>()(
         set((s) => {
           const trip = s.trips[tripId];
           if (!trip) return s;
+          // Orphan (not delete) any linked tasks/docs/packing items so users
+          // don't silently lose logistics when removing an activity.
           return {
             trips: {
               ...s.trips,
@@ -215,6 +305,15 @@ export const useStore = create<Store>()(
                 activities: trip.activities.filter((a) => a.id !== activityId),
                 travelLegs: trip.travelLegs.filter(
                   (l) => l.fromActivityId !== activityId && l.toActivityId !== activityId
+                ),
+                tasks: trip.tasks.map((t) =>
+                  t.linkedActivityId === activityId ? { ...t, linkedActivityId: undefined } : t
+                ),
+                packing: trip.packing.map((p) =>
+                  p.linkedActivityId === activityId ? { ...p, linkedActivityId: undefined } : p
+                ),
+                documents: trip.documents.map((d) =>
+                  d.activityId === activityId ? { ...d, activityId: undefined } : d
                 ),
               },
             },
@@ -400,16 +499,20 @@ export function newLink(label = "", url = ""): Link {
   return { id: uid(), label, url };
 }
 
-export function newTask(label = ""): Task {
-  return { id: uid(), label, done: false };
+export function newTask(label = "", dueDate?: string, linkedActivityId?: string): Task {
+  return { id: uid(), label, done: false, dueDate, linkedActivityId };
 }
 
-export function newPackingItem(label = "", category = "General"): PackingItem {
-  return { id: uid(), label, category, packed: false };
+export function newPackingItem(
+  label = "",
+  category = "General",
+  linkedActivityId?: string
+): PackingItem {
+  return { id: uid(), label, category, packed: false, linkedActivityId };
 }
 
-export function newDocument(label = "", url = ""): DocumentRef {
-  return { id: uid(), label, url };
+export function newDocument(label = "", url = "", activityId?: string): DocumentRef {
+  return { id: uid(), label, url, activityId };
 }
 
 export function newLeg(fromId: string, toId: string): TravelLeg {

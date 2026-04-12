@@ -3,7 +3,9 @@
 import { use, useState, useMemo } from "react";
 import { useStore, newPackingItem } from "@/lib/store";
 import { PosterHeader } from "@/components/layout/PosterHeader";
-import { Plus, Check, Trash2 } from "lucide-react";
+import { ActivityModal } from "@/components/itinerary/ActivityModal";
+import type { Activity } from "@/lib/types";
+import { Plus, Check, Trash2, Link2 } from "lucide-react";
 
 export default function PackingPage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = use(params);
@@ -13,6 +15,7 @@ export default function PackingPage({ params }: { params: Promise<{ tripId: stri
   const remove = useStore((s) => s.removePacking);
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState("Clothes");
+  const [editing, setEditing] = useState<Activity | null>(null);
 
   const grouped = useMemo(() => {
     if (!trip) return {};
@@ -70,25 +73,40 @@ export default function PackingPage({ params }: { params: Promise<{ tripId: stri
           <section key={cat}>
             <h2 className="display text-2xl text-teal-dark mb-3">{cat}</h2>
             <ul className="space-y-2">
-              {items.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 group">
-                  <button
-                    onClick={() => toggle(tripId, p.id)}
-                    className="w-6 h-6 border-2 border-ink bg-cream grid place-items-center shrink-0"
-                    aria-label={p.packed ? "Mark unpacked" : "Mark packed"}
-                  >
-                    {p.packed && <Check size={14} className="text-orange" />}
-                  </button>
-                  <span className={`flex-1 ${p.packed ? "line-through text-ink/40" : ""}`}>{p.label}</span>
-                  <button
-                    onClick={() => remove(tripId, p.id)}
-                    className="opacity-0 group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity"
-                    aria-label="Remove"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </li>
-              ))}
+              {items.map((p) => {
+                const activity = p.linkedActivityId
+                  ? trip.activities.find((a) => a.id === p.linkedActivityId)
+                  : null;
+                return (
+                  <li key={p.id} className="flex items-center gap-3 group">
+                    <button
+                      onClick={() => toggle(tripId, p.id)}
+                      className="w-6 h-6 border-2 border-ink bg-cream grid place-items-center shrink-0"
+                      aria-label={p.packed ? "Mark unpacked" : "Mark packed"}
+                    >
+                      {p.packed && <Check size={14} className="text-orange" />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className={p.packed ? "line-through text-ink/40" : ""}>{p.label}</div>
+                      {activity && (
+                        <button
+                          onClick={() => setEditing(activity)}
+                          className="stamp text-[9px] text-teal-dark hover:text-orange flex items-center gap-1 mt-0.5"
+                        >
+                          <Link2 size={9} /> from "{activity.title}"
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => remove(tripId, p.id)}
+                      className="opacity-0 group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity"
+                      aria-label="Remove"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ))}
@@ -96,6 +114,15 @@ export default function PackingPage({ params }: { params: Promise<{ tripId: stri
           <div className="stamp text-xs text-ink/50 text-center py-10">Nothing packed yet.</div>
         )}
       </div>
+
+      {editing && (
+        <ActivityModal
+          tripId={tripId}
+          initial={editing}
+          isNew={false}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

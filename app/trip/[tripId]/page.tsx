@@ -70,6 +70,7 @@ export default function ItineraryPage({
                   <ActivityCard
                     key={a.id}
                     activity={a}
+                    tripId={tripId}
                     currency={trip.currency}
                     onClick={() => setEditing({ activity: a, isNew: false })}
                   />

@@ -3,8 +3,10 @@
 import { use, useState } from "react";
 import { useStore, newTask } from "@/lib/store";
 import { PosterHeader } from "@/components/layout/PosterHeader";
+import { ActivityModal } from "@/components/itinerary/ActivityModal";
 import { isBeforeIso, isAfterIso } from "@/lib/date";
-import { Check, Trash2, Plus } from "lucide-react";
+import type { Activity } from "@/lib/types";
+import { Check, Trash2, Plus, Link2 } from "lucide-react";
 
 export default function TasksPage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = use(params);
@@ -13,6 +15,8 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
   const toggle = useStore((s) => s.toggleTask);
   const remove = useStore((s) => s.removeTask);
   const [newLabel, setNewLabel] = useState("");
+  const [newDue, setNewDue] = useState("");
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   if (!trip) return null;
 
@@ -26,26 +30,43 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
 
   const add = () => {
     if (!newLabel.trim()) return;
-    upsert(tripId, newTask(newLabel.trim()));
+    upsert(tripId, newTask(newLabel.trim(), newDue || undefined));
     setNewLabel("");
+    setNewDue("");
+  };
+
+  const updateDue = (taskId: string, dueDate: string) => {
+    const task = trip.tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    upsert(tripId, { ...task, dueDate: dueDate || undefined });
+  };
+
+  const openActivityFor = (activityId: string) => {
+    const act = trip.activities.find((a) => a.id === activityId);
+    if (act) setEditingActivity(act);
   };
 
   const remaining = trip.tasks.filter((t) => !t.done).length;
 
   return (
     <div>
-      <PosterHeader
-        trip={trip}
-        subtitle={`${remaining} of ${trip.tasks.length} tasks remaining`}
-      />
+      <PosterHeader trip={trip} subtitle={`${remaining} of ${trip.tasks.length} tasks remaining`} />
 
-      <div className="mb-8 flex gap-3">
+      <div className="mb-8 flex gap-3 flex-wrap">
         <input
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
           placeholder="Add a planning task…"
-          className="field-input flex-1"
+          className="field-input flex-1 min-w-64"
+        />
+        <input
+          type="date"
+          value={newDue}
+          onChange={(e) => setNewDue(e.target.value)}
+          min={newDue ? undefined : undefined}
+          className="field-input w-44"
+          title="Due date determines which bucket the task goes in"
         />
         <button onClick={add} className="btn-poster">
           <Plus size={14} /> Add task
@@ -74,10 +95,24 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
                     >
                       {t.done && <Check size={14} className="text-orange" />}
                     </button>
-                    <span className={`flex-1 ${t.done ? "line-through text-ink/40" : ""}`}>{t.label}</span>
-                    {t.dueDate && (
-                      <span className="stamp text-[10px] text-teal-dark">{t.dueDate}</span>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className={t.done ? "line-through text-ink/40" : ""}>{t.label}</div>
+                      {t.linkedActivityId && (
+                        <button
+                          onClick={() => openActivityFor(t.linkedActivityId!)}
+                          className="stamp text-[9px] text-teal-dark hover:text-orange flex items-center gap-1 mt-0.5"
+                        >
+                          <Link2 size={9} /> from "{trip.activities.find((a) => a.id === t.linkedActivityId)?.title ?? "deleted activity"}"
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="date"
+                      value={t.dueDate ?? ""}
+                      onChange={(e) => updateDue(t.id, e.target.value)}
+                      className="field-input w-36 text-xs py-1"
+                      title="Edit due date — moves the task between buckets"
+                    />
                     <button
                       onClick={() => remove(tripId, t.id)}
                       className="opacity-0 group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity"
@@ -92,6 +127,15 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
           </section>
         ))}
       </div>
+
+      {editingActivity && (
+        <ActivityModal
+          tripId={tripId}
+          initial={editingActivity}
+          isNew={false}
+          onClose={() => setEditingActivity(null)}
+        />
+      )}
     </div>
   );
 }
