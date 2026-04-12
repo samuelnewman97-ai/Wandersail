@@ -6,7 +6,8 @@ import { CATEGORIES } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
 import { useStore, newLink } from "@/lib/store";
 import { TimeSelect } from "@/components/ui/TimeSelect";
-import { X, Link2, Plus, Trash2 } from "lucide-react";
+import { parseCoordinates, formatLat, formatLng } from "@/lib/coords";
+import { X, Link2, Plus, Trash2, MapPin } from "lucide-react";
 
 interface Props {
   tripId: string;
@@ -20,6 +21,8 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
   const removeActivity = useStore((s) => s.removeActivity);
   const [draft, setDraft] = useState<Activity>(initial);
   const [linksOpen, setLinksOpen] = useState(false);
+  const [pasteValue, setPasteValue] = useState("");
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -119,35 +122,91 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
               placeholder="Champ de Mars, Paris"
               className="field-input"
             />
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              <input
-                type="number"
-                step="0.0001"
-                value={draft.location.lat ?? ""}
-                onChange={(e) =>
-                  update("location", {
-                    ...draft.location,
-                    lat: e.target.value === "" ? undefined : Number(e.target.value),
-                  })
-                }
-                placeholder="Latitude (optional)"
-                className="field-input text-xs"
-              />
-              <input
-                type="number"
-                step="0.0001"
-                value={draft.location.lng ?? ""}
-                onChange={(e) =>
-                  update("location", {
-                    ...draft.location,
-                    lng: e.target.value === "" ? undefined : Number(e.target.value),
-                  })
-                }
-                placeholder="Longitude (optional)"
-                className="field-input text-xs"
-              />
+
+            <div className="mt-3 border-2 border-dashed border-ink/30 p-3 bg-cream-dark/40 space-y-2">
+              <div className="stamp text-[10px] text-teal-dark flex items-center gap-1">
+                <MapPin size={10} /> Coordinates (for map view)
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  value={pasteValue}
+                  onChange={(e) => {
+                    setPasteValue(e.target.value);
+                    setPasteError(null);
+                  }}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text");
+                    const parsed = parseCoordinates(text);
+                    if (parsed) {
+                      e.preventDefault();
+                      update("location", { ...draft.location, lat: parsed.lat, lng: parsed.lng });
+                      setPasteValue("");
+                      setPasteError(null);
+                    }
+                  }}
+                  placeholder='Paste from Google Maps: "21.3099, -157.8581"'
+                  className="field-input text-xs flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const parsed = parseCoordinates(pasteValue);
+                    if (parsed) {
+                      update("location", { ...draft.location, lat: parsed.lat, lng: parsed.lng });
+                      setPasteValue("");
+                      setPasteError(null);
+                    } else {
+                      setPasteError("Couldn't parse those coordinates.");
+                    }
+                  }}
+                  disabled={!pasteValue.trim()}
+                  className="btn-poster btn-poster-sm disabled:opacity-40"
+                >
+                  Parse
+                </button>
+              </div>
+              {pasteError && <div className="stamp text-[10px] text-orange">{pasteError}</div>}
+
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="number"
+                  step="0.0001"
+                  value={draft.location.lat ?? ""}
+                  onChange={(e) =>
+                    update("location", {
+                      ...draft.location,
+                      lat: e.target.value === "" ? undefined : Number(e.target.value),
+                    })
+                  }
+                  placeholder="Latitude"
+                  className="field-input text-xs"
+                />
+                <input
+                  type="number"
+                  step="0.0001"
+                  value={draft.location.lng ?? ""}
+                  onChange={(e) =>
+                    update("location", {
+                      ...draft.location,
+                      lng: e.target.value === "" ? undefined : Number(e.target.value),
+                    })
+                  }
+                  placeholder="Longitude"
+                  className="field-input text-xs"
+                />
+              </div>
+
+              {typeof draft.location.lat === "number" && typeof draft.location.lng === "number" ? (
+                <div className="stamp text-[10px] text-teal-dark">
+                  Current: {formatLat(draft.location.lat)}, {formatLng(draft.location.lng)}
+                </div>
+              ) : (
+                <div className="stamp text-[10px] text-ink/50">
+                  Tip: use negative values for West (Hawaii = -157.8) or South hemispheres.
+                </div>
+              )}
             </div>
-            <div className="stamp text-[9px] text-ink/50 mt-1">Lat/lng power the map view.</div>
           </div>
 
           <div>
