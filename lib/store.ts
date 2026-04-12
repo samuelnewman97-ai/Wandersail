@@ -25,12 +25,14 @@ interface Store {
   anthropicApiKey: string | null;
   chatModel: string;
   chats: Record<TripId, ChatThread>;
+  chatDocked: boolean;
   hydrated: boolean;
 
   setHydrated: () => void;
   setMapboxToken: (token: string | null) => void;
   setAnthropicApiKey: (key: string | null) => void;
   setChatModel: (model: string) => void;
+  setChatDocked: (docked: boolean) => void;
 
   appendChatMessage: (tripId: TripId, message: ChatMessage) => void;
   updateChatMessage: (
@@ -184,6 +186,7 @@ export const useStore = create<Store>()(
       anthropicApiKey: null,
       chatModel: "claude-sonnet-4-6",
       chats: {},
+      chatDocked: false,
       hydrated: false,
 
       setHydrated: () => set({ hydrated: true }),
@@ -191,6 +194,7 @@ export const useStore = create<Store>()(
       setAnthropicApiKey: (key) =>
         set({ anthropicApiKey: key && key.trim() ? key.trim() : null }),
       setChatModel: (model) => set({ chatModel: model }),
+      setChatDocked: (docked) => set({ chatDocked: docked }),
 
       appendChatMessage: (tripId, message) =>
         set((s) => {

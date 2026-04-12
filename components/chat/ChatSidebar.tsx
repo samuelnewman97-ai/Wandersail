@@ -159,15 +159,10 @@ export function ChatSidebar({ trip, open, onClose }: Props) {
   const noKey = !apiKey;
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none">
-      <div
-        className="absolute inset-0 bg-ink/30 backdrop-blur-[1px] pointer-events-auto"
-        onClick={onClose}
-      />
-      <aside
-        className="absolute right-0 top-0 bottom-0 w-full max-w-[440px] bg-cream border-l-4 border-ink flex flex-col pointer-events-auto"
-        style={{ boxShadow: "-8px 0 0 var(--orange)" }}
-      >
+    <aside
+      className="w-[440px] shrink-0 bg-cream border-l-4 border-ink flex flex-col sticky top-0 self-start"
+      style={{ height: "100vh" }}
+    >
         <header className="border-b-2 border-ink p-3 flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="stamp text-[10px] text-orange">— Claude · Trip co-planner —</div>
@@ -264,8 +259,7 @@ export function ChatSidebar({ trip, open, onClose }: Props) {
             />
           </>
         )}
-      </aside>
-    </div>
+    </aside>
   );
 }
 
