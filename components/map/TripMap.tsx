@@ -72,12 +72,21 @@ export default function TripMap({ trip, token, onSelectActivity, selectedId }: P
                 e.stopPropagation();
                 onSelectActivity(a.id);
               }}
-              className="relative block"
               aria-label={a.title}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                display: "block",
+                lineHeight: 0,
+                padding: 0,
+                margin: 0,
+                border: "none",
+                background: "transparent",
+              }}
             >
               <div
                 className={`w-9 h-9 rounded-full grid place-items-center text-cream font-bold text-sm border-2 border-ink transition-transform ${selected ? "scale-125" : ""}`}
-                style={{ background: meta.color, boxShadow: "2px 2px 0 var(--ink)" }}
+                style={{ background: meta.color }}
               >
                 {i + 1}
               </div>
