@@ -66,7 +66,7 @@ export default function TripMap({ trip, token, onSelectActivity, selectedId }: P
         const meta = CATEGORY_META[a.category];
         const selected = selectedId === a.id;
         return (
-          <Marker key={a.id} longitude={a.location.lng} latitude={a.location.lat} anchor="bottom">
+          <Marker key={a.id} longitude={a.location.lng} latitude={a.location.lat} anchor="center">
             <button
               onClick={(e) => {
                 e.stopPropagation();

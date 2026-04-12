@@ -5,7 +5,7 @@ import type { Activity, Category, Link as TripLink } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
 import { useStore, newLink } from "@/lib/store";
-import { uid } from "@/lib/utils";
+import { TimeSelect } from "@/components/ui/TimeSelect";
 import { X, Link2, Plus, Trash2 } from "lucide-react";
 
 interface Props {
@@ -150,33 +150,24 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
             <div className="stamp text-[9px] text-ink/50 mt-1">Lat/lng power the map view.</div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="field-label">Date</label>
+            <input
+              type="date"
+              value={draft.date}
+              onChange={(e) => update("date", e.target.value)}
+              className="field-input max-w-xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="field-label">Date</label>
-              <input
-                type="date"
-                value={draft.date}
-                onChange={(e) => update("date", e.target.value)}
-                className="field-input"
-              />
+              <label className="field-label">Start time</label>
+              <TimeSelect value={draft.startTime} onChange={(v) => update("startTime", v)} />
             </div>
             <div>
-              <label className="field-label">Start</label>
-              <input
-                type="time"
-                value={draft.startTime ?? ""}
-                onChange={(e) => update("startTime", e.target.value || undefined)}
-                className="field-input"
-              />
-            </div>
-            <div>
-              <label className="field-label">End</label>
-              <input
-                type="time"
-                value={draft.endTime ?? ""}
-                onChange={(e) => update("endTime", e.target.value || undefined)}
-                className="field-input"
-              />
+              <label className="field-label">End time</label>
+              <TimeSelect value={draft.endTime} onChange={(v) => update("endTime", v)} />
             </div>
           </div>
 

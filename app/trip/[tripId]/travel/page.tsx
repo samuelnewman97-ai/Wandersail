@@ -8,6 +8,7 @@ import { TRAVEL_MODE_META } from "@/lib/travelModes";
 import { TRAVEL_MODES, type TravelLeg, type TravelMode, type Activity } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
 import { formatCurrency } from "@/lib/utils";
+import { TimeSelect } from "@/components/ui/TimeSelect";
 import { Plus, X, Trash2 } from "lucide-react";
 
 export default function TravelPage({ params }: { params: Promise<{ tripId: string }> }) {
@@ -171,8 +172,8 @@ function LegModal({
   const exists = trip.travelLegs.some((l) => l.id === leg.id);
 
   const upd = <K extends keyof TravelLeg>(k: K, v: TravelLeg[K]) => setDraft((d) => ({ ...d, [k]: v }));
-  const updDetails = (k: keyof TravelLeg["details"], v: string) =>
-    setDraft((d) => ({ ...d, details: { ...d.details, [k]: v || undefined } }));
+  const updDetails = (k: keyof TravelLeg["details"], v: string | undefined) =>
+    setDraft((d) => ({ ...d, details: { ...d.details, [k]: v && v.length > 0 ? v : undefined } }));
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -230,32 +231,23 @@ function LegModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="field-label">Confirmation #</label>
+            <input
+              value={draft.details.confirmationNumber ?? ""}
+              onChange={(e) => updDetails("confirmationNumber", e.target.value)}
+              className="field-input max-w-xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="field-label">Confirmation #</label>
-              <input
-                value={draft.details.confirmationNumber ?? ""}
-                onChange={(e) => updDetails("confirmationNumber", e.target.value)}
-                className="field-input"
-              />
+              <label className="field-label">Depart time</label>
+              <TimeSelect value={draft.details.departTime} onChange={(v) => updDetails("departTime", v)} />
             </div>
             <div>
-              <label className="field-label">Depart</label>
-              <input
-                type="time"
-                value={draft.details.departTime ?? ""}
-                onChange={(e) => updDetails("departTime", e.target.value)}
-                className="field-input"
-              />
-            </div>
-            <div>
-              <label className="field-label">Arrive</label>
-              <input
-                type="time"
-                value={draft.details.arriveTime ?? ""}
-                onChange={(e) => updDetails("arriveTime", e.target.value)}
-                className="field-input"
-              />
+              <label className="field-label">Arrive time</label>
+              <TimeSelect value={draft.details.arriveTime} onChange={(v) => updDetails("arriveTime", v)} />
             </div>
           </div>
 
