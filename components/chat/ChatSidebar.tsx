@@ -163,38 +163,45 @@ export function ChatSidebar({ trip, open, onClose }: Props) {
       className="w-[440px] shrink-0 bg-cream border-l-4 border-ink flex flex-col sticky top-0 self-start"
       style={{ height: "100vh" }}
     >
-        <header className="border-b-2 border-ink p-3 flex items-center justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="stamp text-[10px] text-orange">— Claude · Trip co-planner —</div>
-            <div className="display text-lg leading-none truncate">{trip.name}</div>
+        <header className="border-b-2 border-ink bg-cream">
+          <div className="p-3 flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="stamp text-[10px] text-orange leading-none mb-1">
+                — Claude · Trip co-planner —
+              </div>
+              <div className="display text-lg leading-none truncate">{trip.name}</div>
+            </div>
+            <button
+              onClick={onClose}
+              className="shrink-0 p-1.5 border-2 border-ink hover:bg-cream-dark bg-cream"
+              aria-label="Close"
+              title="Close (Ctrl+K)"
+            >
+              <X size={14} />
+            </button>
           </div>
-          <select
-            value={chatModel}
-            onChange={(e) => setChatModel(e.target.value)}
-            className="field-input text-xs py-1 w-28"
-            title="Model"
-          >
-            <option value="claude-sonnet-4-6">Sonnet 4.6</option>
-            <option value="claude-opus-4-6">Opus 4.6</option>
-            <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
-          </select>
-          <button
-            onClick={() => {
-              if (confirm("Clear the chat thread for this trip?")) clearChat(trip.id);
-            }}
-            className="p-1.5 border-2 border-ink hover:bg-cream-dark"
-            aria-label="Clear thread"
-            title="Clear thread"
-          >
-            <Trash2 size={14} />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1.5 border-2 border-ink hover:bg-cream-dark"
-            aria-label="Close"
-          >
-            <X size={14} />
-          </button>
+          <div className="px-3 pb-3 flex items-center gap-2">
+            <select
+              value={chatModel}
+              onChange={(e) => setChatModel(e.target.value)}
+              className="field-input text-xs py-1 flex-1"
+              title="Model"
+            >
+              <option value="claude-sonnet-4-6">Sonnet 4.6</option>
+              <option value="claude-opus-4-6">Opus 4.6</option>
+              <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+            </select>
+            <button
+              onClick={() => {
+                if (confirm("Clear the chat thread for this trip?")) clearChat(trip.id);
+              }}
+              className="shrink-0 p-1.5 border-2 border-ink hover:bg-cream-dark bg-cream flex items-center gap-1 stamp text-[10px]"
+              aria-label="Clear thread"
+              title="Clear thread"
+            >
+              <Trash2 size={12} /> Clear
+            </button>
+          </div>
         </header>
 
         {noKey ? (
