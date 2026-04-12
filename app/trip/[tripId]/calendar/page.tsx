@@ -192,7 +192,7 @@ function WeekView({
   // Show 7 days starting from anchorDate
   const days = Array.from({ length: 7 }, (_, i) => shiftDay(anchorDate, i));
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className="grid grid-cols-7 gap-2 min-w-[640px]" style={{ overflowX: "auto" }}>
       {days.map((d) => {
         const acts = grouped[d] ?? [];
         return (

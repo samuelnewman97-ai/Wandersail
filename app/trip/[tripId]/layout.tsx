@@ -49,7 +49,7 @@ export default function TripLayout({
       {tripExists && trip && (
         <div className="flex min-h-screen">
           <LeftRail tripId={tripId} />
-          <main className="flex-1 p-8 md:p-12 min-w-0">{children}</main>
+          <main className="flex-1 p-5 sm:p-6 lg:p-10 min-w-0">{children}</main>
           <ChatSidebar
             trip={trip}
             open={chatDocked}

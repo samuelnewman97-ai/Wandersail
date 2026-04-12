@@ -52,24 +52,23 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
     <div>
       <PosterHeader trip={trip} subtitle={`${remaining} of ${trip.tasks.length} tasks remaining`} />
 
-      <div className="mb-8 flex gap-3 flex-wrap">
+      <div className="mb-8 flex gap-2 items-stretch flex-wrap">
         <input
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
           placeholder="Add a planning task…"
-          className="field-input flex-1 min-w-64"
+          className="field-input flex-1 min-w-48"
         />
         <input
           type="date"
           value={newDue}
           onChange={(e) => setNewDue(e.target.value)}
-          min={newDue ? undefined : undefined}
-          className="field-input w-44"
-          title="Due date determines which bucket the task goes in"
+          className="field-input w-36 shrink-0 text-xs"
+          title="Due date determines which bucket this task goes in"
         />
-        <button onClick={add} className="btn-poster">
-          <Plus size={14} /> Add task
+        <button onClick={add} className="btn-poster shrink-0">
+          <Plus size={14} /> Add
         </button>
       </div>
 
@@ -87,7 +86,7 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
             ) : (
               <ul className="space-y-2">
                 {items.map((t) => (
-                  <li key={t.id} className="flex items-center gap-3 group">
+                  <li key={t.id} className="flex items-center gap-2 group">
                     <button
                       onClick={() => toggle(tripId, t.id)}
                       className="w-6 h-6 border-2 border-ink bg-cream grid place-items-center shrink-0"
@@ -96,13 +95,21 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
                       {t.done && <Check size={14} className="text-orange" />}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <div className={t.done ? "line-through text-ink/40" : ""}>{t.label}</div>
+                      <div className={`truncate ${t.done ? "line-through text-ink/40" : ""}`}>
+                        {t.label}
+                      </div>
                       {t.linkedActivityId && (
                         <button
                           onClick={() => openActivityFor(t.linkedActivityId!)}
-                          className="stamp text-[9px] text-teal-dark hover:text-orange flex items-center gap-1 mt-0.5"
+                          className="stamp text-[9px] text-teal-dark hover:text-orange flex items-center gap-1 mt-0.5 truncate max-w-full"
                         >
-                          <Link2 size={9} /> from "{trip.activities.find((a) => a.id === t.linkedActivityId)?.title ?? "deleted activity"}"
+                          <Link2 size={9} className="shrink-0" />
+                          <span className="truncate">
+                            from "
+                            {trip.activities.find((a) => a.id === t.linkedActivityId)?.title ??
+                              "deleted activity"}
+                            "
+                          </span>
                         </button>
                       )}
                     </div>
@@ -110,12 +117,12 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
                       type="date"
                       value={t.dueDate ?? ""}
                       onChange={(e) => updateDue(t.id, e.target.value)}
-                      className="field-input w-36 text-xs py-1"
+                      className="field-input w-32 shrink-0 text-xs py-1"
                       title="Edit due date — moves the task between buckets"
                     />
                     <button
                       onClick={() => remove(tripId, t.id)}
-                      className="opacity-0 group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity shrink-0"
                       aria-label="Delete task"
                     >
                       <Trash2 size={14} />

@@ -40,7 +40,7 @@ export default function TravelPage({ params }: { params: Promise<{ tripId: strin
     <div>
       <PosterHeader trip={trip} subtitle="How you'll get from one stop to the next." />
 
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         <Stat label="Total travel cost" value={formatCurrency(totalCost, trip.currency)} />
         <Stat label="Legs planned" value={`${trip.travelLegs.length} / ${Math.max(0, ordered.length - 1)}`} />
         <Stat label="Modes used" value={modesUsed.length === 0 ? "—" : modesUsed.join(", ")} />

@@ -54,7 +54,7 @@ export default function BudgetPage({ params }: { params: Promise<{ tripId: strin
     <div>
       <PosterHeader trip={trip} subtitle="Where every franc and pound will go." />
 
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         <Kpi label="Total projected" value={formatCurrency(data.total, trip.currency)} />
         <Kpi label="Per day" value={formatCurrency(perDay, trip.currency)} />
         <Kpi label="Line items" value={`${rows.length}`} />

@@ -47,14 +47,14 @@ export default function ItineraryPage({
       <div className="space-y-10">
         {Object.entries(grouped).map(([date, acts], dayIdx) => (
           <section key={date}>
-            <div className="flex items-baseline justify-between mb-4">
-              <div className="flex items-baseline gap-4">
-                <div className="display text-3xl text-teal-dark">Day {dayIdx + 1}</div>
+            <div className="flex items-baseline justify-between mb-4 gap-3 flex-wrap">
+              <div className="flex items-baseline gap-3 flex-wrap min-w-0">
+                <div className="display text-2xl sm:text-3xl text-teal-dark">Day {dayIdx + 1}</div>
                 <div className="stamp text-xs text-ink">— {fmtDayHeader(date)}</div>
               </div>
               <button
                 onClick={() => setEditing({ activity: newActivity(date), isNew: true })}
-                className="btn-poster btn-poster-sm"
+                className="btn-poster btn-poster-sm shrink-0"
               >
                 <Plus size={14} /> Add activity
               </button>
