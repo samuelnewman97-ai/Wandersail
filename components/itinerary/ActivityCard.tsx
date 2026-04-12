@@ -51,12 +51,18 @@ export function ActivityCard({ activity, tripId, currency, onClick }: Props) {
     });
   };
 
+  // Rotation creates visual charm on desktop but clutters mobile; disable below md.
+  const tiltDeg = (((activity.id.charCodeAt(0) % 5) - 2) * 0.15).toFixed(2);
+
   return (
     <div
-      className="ticket-card w-full text-left flex p-0"
-      style={{
-        transform: `rotate(${(((activity.id.charCodeAt(0) % 5) - 2) * 0.15).toFixed(2)}deg)`,
-      }}
+      className="ticket-card w-full text-left flex p-0 md:[--tilt:var(--tilt-val)]"
+      style={
+        {
+          ["--tilt-val" as string]: `${tiltDeg}deg`,
+          transform: `rotate(var(--tilt, 0deg))`,
+        } as React.CSSProperties
+      }
     >
       <div
         className="w-2 shrink-0 border-r-2 border-dashed border-ink"

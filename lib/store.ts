@@ -18,6 +18,8 @@ import type {
 import { uid } from "./utils";
 import { todayIso, shiftDay } from "./date";
 
+export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "offline";
+
 interface Store {
   trips: Record<TripId, Trip>;
   activeTripId: TripId | null;
@@ -28,11 +30,23 @@ interface Store {
   chatDocked: boolean;
   hydrated: boolean;
 
+  // Sync state (not persisted to cloud — per-device runtime status)
+  syncStatus: SyncStatus;
+  lastSyncAt: string | null;
+  syncError: string | null;
+
   setHydrated: () => void;
   setMapboxToken: (token: string | null) => void;
   setAnthropicApiKey: (key: string | null) => void;
   setChatModel: (model: string) => void;
   setChatDocked: (docked: boolean) => void;
+  setSyncStatus: (status: SyncStatus, error?: string | null) => void;
+  /** Replace trips/chats/chatModel with state pulled from the cloud. */
+  replaceSyncedState: (synced: {
+    trips: Record<TripId, Trip>;
+    chats: Record<TripId, ChatThread>;
+    chatModel: string;
+  }) => void;
 
   appendChatMessage: (tripId: TripId, message: ChatMessage) => void;
   updateChatMessage: (
@@ -188,6 +202,9 @@ export const useStore = create<Store>()(
       chats: {},
       chatDocked: false,
       hydrated: false,
+      syncStatus: "idle",
+      lastSyncAt: null,
+      syncError: null,
 
       setHydrated: () => set({ hydrated: true }),
       setMapboxToken: (token) => set({ mapboxToken: token && token.trim() ? token.trim() : null }),
@@ -195,6 +212,18 @@ export const useStore = create<Store>()(
         set({ anthropicApiKey: key && key.trim() ? key.trim() : null }),
       setChatModel: (model) => set({ chatModel: model }),
       setChatDocked: (docked) => set({ chatDocked: docked }),
+      setSyncStatus: (status, error = null) =>
+        set({
+          syncStatus: status,
+          syncError: error,
+          lastSyncAt: status === "synced" ? new Date().toISOString() : get().lastSyncAt,
+        }),
+      replaceSyncedState: (synced) =>
+        set({
+          trips: synced.trips,
+          chats: synced.chats,
+          chatModel: synced.chatModel,
+        }),
 
       appendChatMessage: (tripId, message) =>
         set((s) => {
@@ -462,6 +491,17 @@ export const useStore = create<Store>()(
     {
       name: "travel-planner:v1",
       storage: createJSONStorage(() => localStorage),
+      // Persist only data and user settings. Runtime fields (sync status,
+      // hydrated flag) reset on each load.
+      partialize: (state) => ({
+        trips: state.trips,
+        activeTripId: state.activeTripId,
+        mapboxToken: state.mapboxToken,
+        anthropicApiKey: state.anthropicApiKey,
+        chatModel: state.chatModel,
+        chats: state.chats,
+        chatDocked: state.chatDocked,
+      }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           // If the store is empty after rehydration, seed a starter trip

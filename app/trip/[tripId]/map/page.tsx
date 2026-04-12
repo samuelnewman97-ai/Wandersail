@@ -84,11 +84,17 @@ export default function MapPage({ params }: { params: Promise<{ tripId: string }
         </div>
       ) : (
         <>
-          <div className="grid md:grid-cols-[1fr_320px] gap-4" style={{ height: "70vh" }}>
-            <div className="border-2 border-ink overflow-hidden" style={{ boxShadow: "4px 4px 0 var(--teal)" }}>
+          <div className="flex flex-col md:grid md:grid-cols-[1fr_320px] gap-4">
+            <div
+              className="border-2 border-ink overflow-hidden"
+              style={{ boxShadow: "4px 4px 0 var(--teal)", height: "55vh", minHeight: 320 }}
+            >
               <TripMap trip={trip} token={token} onSelectActivity={setSelectedId} selectedId={selectedId} />
             </div>
-            <div className="border-2 border-ink bg-cream overflow-y-auto" style={{ boxShadow: "4px 4px 0 var(--ink)" }}>
+            <div
+              className="border-2 border-ink bg-cream overflow-y-auto"
+              style={{ boxShadow: "4px 4px 0 var(--ink)", maxHeight: "70vh" }}
+            >
               <div className="p-3 border-b-2 border-ink stamp text-xs text-teal-dark sticky top-0 bg-cream">
                 Stops ({withCoords.length})
               </div>

@@ -28,7 +28,7 @@ const NAV = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function LeftRail({ tripId }: { tripId: string }) {
+export function LeftRail({ tripId, onNavigate }: { tripId: string; onNavigate?: () => void }) {
   const pathname = usePathname();
   const trip = useStore((s) => s.trips[tripId]);
 
@@ -57,7 +57,12 @@ export function LeftRail({ tripId }: { tripId: string }) {
           const Icon = item.icon;
           const showBadge = item.badge === "tasks" && remainingTasks > 0;
           return (
-            <Link key={item.href} href={href} className={`nav-link ${active ? "active" : ""}`}>
+            <Link
+              key={item.href}
+              href={href}
+              onClick={onNavigate}
+              className={`nav-link ${active ? "active" : ""}`}
+            >
               <Icon size={16} strokeWidth={2.25} />
               <span className="flex-1">{item.label}</span>
               {showBadge && (
@@ -71,8 +76,41 @@ export function LeftRail({ tripId }: { tripId: string }) {
       </nav>
 
       <div className="mt-auto p-4 border-t-2 border-dashed border-ink/40">
-        <div className="stamp text-[10px] text-teal-dark">v1 · Local-only</div>
+        <SyncStatusPill />
       </div>
     </aside>
+  );
+}
+
+function SyncStatusPill() {
+  const status = useStore((s) => s.syncStatus);
+  const lastSyncAt = useStore((s) => s.lastSyncAt);
+  const error = useStore((s) => s.syncError);
+
+  const label = {
+    idle: "• Not synced",
+    syncing: "○ Syncing…",
+    synced: "● Synced",
+    error: "⚠ Sync error",
+    offline: "✈ Offline",
+  }[status];
+
+  const color = {
+    idle: "text-ink/50",
+    syncing: "text-teal-dark",
+    synced: "text-teal",
+    error: "text-orange",
+    offline: "text-ink/60",
+  }[status];
+
+  const timeLabel = lastSyncAt
+    ? ` · ${new Date(lastSyncAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "";
+
+  return (
+    <div className={`stamp text-[10px] ${color}`} title={error ?? ""}>
+      {label}
+      {status === "synced" && timeLabel}
+    </div>
   );
 }

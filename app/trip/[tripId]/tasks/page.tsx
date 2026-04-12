@@ -122,7 +122,7 @@ export default function TasksPage({ params }: { params: Promise<{ tripId: string
                     />
                     <button
                       onClick={() => remove(tripId, t.id)}
-                      className="opacity-0 group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity shrink-0"
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-ink/60 hover:text-orange transition-opacity shrink-0 p-2 md:p-0"
                       aria-label="Delete task"
                     >
                       <Trash2 size={14} />

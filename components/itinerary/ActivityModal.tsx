@@ -110,6 +110,7 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
               <input
                 type="number"
                 min={0}
+                inputMode="decimal"
                 value={draft.cost}
                 onChange={(e) => update("cost", Number(e.target.value) || 0)}
                 className="field-input"
@@ -175,6 +176,7 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
                 <input
                   type="number"
                   step="0.0001"
+                  inputMode="decimal"
                   value={draft.location.lat ?? ""}
                   onChange={(e) =>
                     update("location", {
@@ -188,6 +190,7 @@ export function ActivityModal({ tripId, initial, onClose, isNew }: Props) {
                 <input
                   type="number"
                   step="0.0001"
+                  inputMode="decimal"
                   value={draft.location.lng ?? ""}
                   onChange={(e) =>
                     update("location", {

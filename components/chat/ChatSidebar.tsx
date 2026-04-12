@@ -160,7 +160,10 @@ export function ChatSidebar({ trip, open, onClose }: Props) {
 
   return (
     <aside
-      className="w-[360px] xl:w-[420px] shrink-0 bg-cream border-l-4 border-ink flex flex-col sticky top-0 self-start"
+      className="
+        fixed inset-0 z-50 w-full bg-cream border-ink flex flex-col
+        lg:static lg:z-auto lg:w-[360px] xl:w-[420px] lg:shrink-0 lg:border-l-4 lg:sticky lg:top-0 lg:self-start
+      "
       style={{ height: "100vh" }}
     >
         <header className="border-b-2 border-ink bg-cream">

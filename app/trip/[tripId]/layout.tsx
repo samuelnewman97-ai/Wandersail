@@ -1,11 +1,14 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LeftRail } from "@/components/layout/LeftRail";
 import { HydrationGate } from "@/components/layout/HydrationGate";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
+import { MobileTopBar } from "@/components/layout/MobileTopBar";
+import { MobileRailDrawer } from "@/components/layout/MobileRailDrawer";
 import { useStore } from "@/lib/store";
+import { useAutoSync } from "@/lib/sync";
 import { MessageCircle } from "lucide-react";
 
 export default function TripLayout({
@@ -23,6 +26,9 @@ export default function TripLayout({
   const setActive = useStore((s) => s.setActiveTrip);
   const chatDocked = useStore((s) => s.chatDocked);
   const setChatDocked = useStore((s) => s.setChatDocked);
+  const [mobileRailOpen, setMobileRailOpen] = useState(false);
+
+  useAutoSync();
 
   useEffect(() => {
     if (hydrated && tripExists) setActive(tripId);
@@ -47,18 +53,32 @@ export default function TripLayout({
   return (
     <HydrationGate>
       {tripExists && trip && (
-        <div className="flex min-h-screen">
-          <LeftRail tripId={tripId} />
-          <main className="flex-1 p-5 sm:p-6 lg:p-10 min-w-0">{children}</main>
-          <ChatSidebar
-            trip={trip}
-            open={chatDocked}
-            onClose={() => setChatDocked(false)}
+        <>
+          <MobileTopBar
+            tripId={tripId}
+            onOpenRail={() => setMobileRailOpen(true)}
+            onOpenChat={() => setChatDocked(true)}
           />
+          <MobileRailDrawer
+            tripId={tripId}
+            open={mobileRailOpen}
+            onClose={() => setMobileRailOpen(false)}
+          />
+          <div className="flex min-h-screen">
+            <div className="hidden md:flex">
+              <LeftRail tripId={tripId} />
+            </div>
+            <main className="flex-1 p-4 sm:p-6 lg:p-10 min-w-0">{children}</main>
+            <ChatSidebar
+              trip={trip}
+              open={chatDocked}
+              onClose={() => setChatDocked(false)}
+            />
+          </div>
           {!chatDocked && (
             <button
               onClick={() => setChatDocked(true)}
-              className="fixed bottom-6 right-6 z-40 btn-poster"
+              className="hidden md:inline-flex fixed bottom-6 right-6 z-40 btn-poster"
               style={{ boxShadow: "5px 5px 0 var(--orange)" }}
               aria-label="Ask Claude (Ctrl+K)"
               title="Ask Claude · Ctrl+K"
@@ -66,7 +86,7 @@ export default function TripLayout({
               <MessageCircle size={16} /> Ask Claude
             </button>
           )}
-        </div>
+        </>
       )}
     </HydrationGate>
   );
