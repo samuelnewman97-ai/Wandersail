@@ -5,16 +5,21 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { HydrationGate } from "@/components/layout/HydrationGate";
 import { todayIso, shiftDay } from "@/lib/date";
+import type { Trip } from "@/lib/types";
+import { Upload } from "lucide-react";
 
 const EMOJI_CHOICES = ["✈️", "🗼", "🏝️", "🏔️", "🗽", "🏛️", "🌋", "🏰", "🌊", "🍜", "🗻", "⛩️"];
 
 export default function NewTripPage() {
   const router = useRouter();
   const createTrip = useStore((s) => s.createTrip);
+  const importTrip = useStore((s) => s.importTrip);
+  const hasTrips = useStore((s) => Object.keys(s.trips).length > 0);
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState(todayIso());
   const [endDate, setEndDate] = useState(shiftDay(todayIso(), 4));
   const [emoji, setEmoji] = useState("✈️");
+  const [importError, setImportError] = useState<string | null>(null);
 
   const canSubmit = name.trim().length > 0 && startDate && endDate && startDate <= endDate;
 
@@ -24,12 +29,42 @@ export default function NewTripPage() {
     router.push(`/trip/${id}`);
   };
 
+  const onCancel = () => {
+    // Always navigate to root — root redirects to first available trip, or
+    // back here if no trips exist. Using router.back() can push to a stale
+    // previous entry and cause a visible refresh.
+    router.push("/");
+  };
+
+  const onImport = () => {
+    setImportError(null);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as Trip;
+        if (!parsed || typeof parsed !== "object" || !parsed.name || !Array.isArray(parsed.activities)) {
+          throw new Error("Not a valid Wandersail trip file");
+        }
+        const id = importTrip(parsed);
+        router.push(`/trip/${id}`);
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : "Could not read file");
+      }
+    };
+    input.click();
+  };
+
   return (
     <HydrationGate>
-      <div className="min-h-screen grid place-items-center p-8">
+      <div className="min-h-screen grid place-items-center p-6 sm:p-8">
         <div className="max-w-lg w-full">
           <div className="stamp text-xs text-orange mb-2">— Begin a new journey —</div>
-          <h1 className="display text-5xl mb-8">Plot your next trip.</h1>
+          <h1 className="display text-4xl sm:text-5xl mb-6">Plot your next trip.</h1>
 
           <div className="space-y-5">
             <div>
@@ -81,14 +116,42 @@ export default function NewTripPage() {
               </div>
             </div>
 
-            <div className="pt-4 flex gap-3">
-              <button onClick={onSubmit} disabled={!canSubmit} className="btn-poster disabled:opacity-40 disabled:cursor-not-allowed">
+            <div className="pt-4 flex gap-3 flex-wrap">
+              <button
+                onClick={onSubmit}
+                disabled={!canSubmit}
+                className="btn-poster disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 Start planning →
               </button>
-              <button onClick={() => router.back()} className="btn-poster btn-poster-secondary">
-                Cancel
-              </button>
+              {hasTrips && (
+                <button onClick={onCancel} className="btn-poster btn-poster-secondary">
+                  Cancel
+                </button>
+              )}
             </div>
+          </div>
+
+          <div className="my-8 flex items-center gap-3">
+            <div className="flex-1 h-0 border-t-2 border-dashed border-ink/30" />
+            <div className="stamp text-[10px] text-ink/50">or</div>
+            <div className="flex-1 h-0 border-t-2 border-dashed border-ink/30" />
+          </div>
+
+          <div className="border-2 border-ink bg-cream p-5" style={{ boxShadow: "4px 4px 0 var(--teal)" }}>
+            <div className="stamp text-[10px] text-teal-dark mb-1">— Already planned a trip? —</div>
+            <h2 className="display text-2xl mb-2">Import a saved trip</h2>
+            <p className="text-sm text-ink/70 mb-4">
+              Got a <code className="bg-cream-dark px-1 border border-ink/30">.json</code> file from a
+              previous export (laptop, other device, or email)? Drop it here and pick up where you
+              left off.
+            </p>
+            <button onClick={onImport} className="btn-poster btn-poster-secondary">
+              <Upload size={14} /> Import JSON file
+            </button>
+            {importError && (
+              <div className="stamp text-[10px] text-orange mt-3">⚠ {importError}</div>
+            )}
           </div>
         </div>
       </div>

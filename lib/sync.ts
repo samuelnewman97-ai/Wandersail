@@ -75,32 +75,49 @@ export function useAutoSync() {
         return;
       }
 
-      // Cloud has data — it's authoritative. Replace local trips/chats.
-      const newTrips = data.trips ?? {};
-      const newChats = data.chats ?? {};
-      const newModel = data.chatModel ?? useStore.getState().chatModel;
+      // Cloud has data — MERGE with local rather than replace. This keeps
+      // local-only trips (e.g. one you just created on this device) from
+      // being wiped when the initial pull returns. On conflicting ids,
+      // cloud wins (simple last-write-wins). The debounced push will then
+      // send the merged state back up to cloud so both devices converge.
+      const cloudTrips = data.trips ?? {};
+      const cloudChats = data.chats ?? {};
+      const cloudModel = data.chatModel ?? useStore.getState().chatModel;
+      const before = useStore.getState();
+      const mergedTrips = { ...before.trips, ...cloudTrips };
+      const mergedChats = { ...before.chats, ...cloudChats };
       replaceSyncedState({
-        trips: newTrips,
-        chats: newChats,
-        chatModel: newModel,
+        trips: mergedTrips,
+        chats: mergedChats,
+        chatModel: cloudModel,
       });
 
-      // Clean up a stale activeTripId left over in localStorage that no
-      // longer matches any cloud trip. Without this, the root page would
-      // redirect to a nonexistent trip and the layout would redirect back,
-      // creating an infinite loop.
+      // Clean up a stale activeTripId that doesn't match any merged trip.
       const after = useStore.getState();
-      if (after.activeTripId && !newTrips[after.activeTripId]) {
-        const fallback = Object.keys(newTrips)[0] ?? null;
+      if (after.activeTripId && !mergedTrips[after.activeTripId]) {
+        const fallback = Object.keys(mergedTrips)[0] ?? null;
         useStore.setState({ activeTripId: fallback });
       }
 
-      lastPushedJson.current = JSON.stringify({
-        trips: newTrips,
-        chats: newChats,
-        chatModel: newModel,
+      // Compare the merged state against the cloud state to decide if we
+      // need to push. If local had unique trips, the merge differs from
+      // cloud and we should push to upload them.
+      const mergedJson = JSON.stringify({
+        trips: mergedTrips,
+        chats: mergedChats,
+        chatModel: cloudModel,
       });
+      const cloudJson = JSON.stringify({
+        trips: cloudTrips,
+        chats: cloudChats,
+        chatModel: cloudModel,
+      });
+      lastPushedJson.current = cloudJson;
       setSyncStatus("synced");
+      // If local had local-only data, trigger a push to upload the merge.
+      if (mergedJson !== cloudJson) {
+        setTimeout(() => void doPush(), 50);
+      }
     } catch (e) {
       setSyncStatus("error", e instanceof Error ? e.message : "Unknown error");
     }
