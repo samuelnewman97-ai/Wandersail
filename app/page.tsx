@@ -7,17 +7,22 @@ import { useStore } from "@/lib/store";
 export default function Home() {
   const router = useRouter();
   const hydrated = useStore((s) => s.hydrated);
-  const activeTripId = useStore((s) => s.activeTripId);
-  const tripCount = useStore((s) => Object.keys(s.trips).length);
+  // Resolve an actually-existing trip to navigate to, defending against a
+  // stale activeTripId that no longer points at a trip (e.g. after a cloud
+  // pull wiped trips but activeTripId was still cached in localStorage).
+  const targetTripId = useStore((s) => {
+    if (s.activeTripId && s.trips[s.activeTripId]) return s.activeTripId;
+    return Object.keys(s.trips)[0] ?? null;
+  });
 
   useEffect(() => {
     if (!hydrated) return;
-    if (activeTripId) {
-      router.replace(`/trip/${activeTripId}`);
-    } else if (tripCount === 0) {
+    if (targetTripId) {
+      router.replace(`/trip/${targetTripId}`);
+    } else {
       router.replace("/new-trip");
     }
-  }, [hydrated, activeTripId, tripCount, router]);
+  }, [hydrated, targetTripId, router]);
 
   return (
     <div className="min-h-screen grid place-items-center">

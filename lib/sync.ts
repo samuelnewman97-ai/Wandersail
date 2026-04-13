@@ -58,19 +58,48 @@ export function useAutoSync() {
     try {
       setSyncStatus("syncing");
       const { data } = await pullState();
-      if (data) {
-        replaceSyncedState({
-          trips: data.trips ?? {},
-          chats: data.chats ?? {},
-          chatModel: data.chatModel ?? useStore.getState().chatModel,
-        });
-        // Record what we have so push doesn't immediately re-fire.
-        lastPushedJson.current = JSON.stringify({
-          trips: data.trips ?? {},
-          chats: data.chats ?? {},
-          chatModel: data.chatModel ?? useStore.getState().chatModel,
-        });
+
+      if (data === null) {
+        // Cloud has never been written. Push current local state (possibly
+        // including the seed trip) as the initial cloud state, and keep
+        // local as-is.
+        const s = useStore.getState();
+        const synced: SyncedState = {
+          trips: s.trips,
+          chats: s.chats,
+          chatModel: s.chatModel,
+        };
+        await pushState(synced);
+        lastPushedJson.current = JSON.stringify(synced);
+        setSyncStatus("synced");
+        return;
       }
+
+      // Cloud has data — it's authoritative. Replace local trips/chats.
+      const newTrips = data.trips ?? {};
+      const newChats = data.chats ?? {};
+      const newModel = data.chatModel ?? useStore.getState().chatModel;
+      replaceSyncedState({
+        trips: newTrips,
+        chats: newChats,
+        chatModel: newModel,
+      });
+
+      // Clean up a stale activeTripId left over in localStorage that no
+      // longer matches any cloud trip. Without this, the root page would
+      // redirect to a nonexistent trip and the layout would redirect back,
+      // creating an infinite loop.
+      const after = useStore.getState();
+      if (after.activeTripId && !newTrips[after.activeTripId]) {
+        const fallback = Object.keys(newTrips)[0] ?? null;
+        useStore.setState({ activeTripId: fallback });
+      }
+
+      lastPushedJson.current = JSON.stringify({
+        trips: newTrips,
+        chats: newChats,
+        chatModel: newModel,
+      });
       setSyncStatus("synced");
     } catch (e) {
       setSyncStatus("error", e instanceof Error ? e.message : "Unknown error");

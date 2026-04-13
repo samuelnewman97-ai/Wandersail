@@ -35,8 +35,14 @@ export default function TripLayout({
   }, [hydrated, tripExists, tripId, setActive]);
 
   useEffect(() => {
-    if (hydrated && !tripExists) router.replace("/");
-  }, [hydrated, tripExists, router]);
+    if (hydrated && !tripExists) {
+      // Clear stale activeTripId so the root page doesn't redirect us back here.
+      if (useStore.getState().activeTripId === tripId) {
+        useStore.setState({ activeTripId: null });
+      }
+      router.replace("/");
+    }
+  }, [hydrated, tripExists, tripId, router]);
 
   // Cmd/Ctrl+K to toggle chat
   useEffect(() => {
